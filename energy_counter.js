@@ -3,6 +3,15 @@ let energyConsumedWs = 0.0;
 
 let log = 0;
 
+// set this to false to stop publishing on MQTT
+let MQTTpublish = true;
+
+// query the MQTT prefix on startup
+let SHELLY_ID = undefined;
+Shelly.call("Mqtt.GetConfig", "", function (res, err_code, err_msg, ud) {
+  SHELLY_ID = res["topic_prefix"];
+});
+
 function SetKVS(key, value)
 {
  Shelly.call(
@@ -51,6 +60,9 @@ Shelly.call(
 let counter3600 = 0;
 let counter20 = 18;
 
+let lastPublishedMQTTConsumed = "";
+let lastPublishedMQTTReturned = "";
+
 function timerHandler(user_data)
 {
   let em = Shelly.getComponentStatus("em", 0);
@@ -80,15 +92,42 @@ function timerHandler(user_data)
     if ( counter20 > 20)
     {
       counter20 = 0;  
-       Shelly.call(
-         "Sys.SetConfig", {
+      Shelly.call(
+        "Sys.SetConfig", {
            config: {device:{name:(energyConsumedWs / 3600000).toFixed(3)+" KWh ; "+(energyReturnedWs / 3600000).toFixed(3)+" KWh"}},
-         },
-         function(result, error_code, error_message, userdata) {
+        },
+        function(result, error_code, error_message, userdata) {
            //print("error ", error_code, " : ", error_message);
            //print("result", JSON.stringify(result));
-         }
-       );
+        }
+      );
+             
+      if (typeof SHELLY_ID !== "undefined" && MQTTpublish === true) 
+      {         
+        let value = (energyConsumedWs / 3600000).toFixed(3);
+        if (value !== lastPublishedMQTTConsumed)
+        {
+          MQTT.publish(
+            SHELLY_ID + "/energy_counter/consumed",
+            value,
+            0,
+            false
+          );
+          lastPublishedMQTTConsumed = value;
+        }
+        
+        let value = (energyReturnedWs / 3600000).toFixed(3);
+        if (value !== lastPublishedMQTTReturned)
+        {
+          MQTT.publish(
+            SHELLY_ID + "/energy_counter/returned",
+            value,
+            0,
+            false
+          );
+          lastPublishedMQTTReturned = value;
+        }           
+      }
     }
   };
 }
