@@ -48,17 +48,6 @@ Shelly.call(
    }
  );
 
-function httpServerHandler(request, response) {
-    response.code = 200;
-    response.body = JSON.stringify(energyConsumedWs / 3600000) + " ; " + JSON.stringify(energyReturnedWs / 3600000);
-    response.send();
-    return;
-}
-
-//we don't handle failure of this method
-//as according to Shelly Gen2 API docs it aborts the script
-HTTPServer.registerEndpoint("counter", httpServerHandler);
-
 let counter3600 = 0;
 let counter20 = 18;
 
