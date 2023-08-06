@@ -15,5 +15,6 @@ Simply add a new script in the Pro3EM and copy the contents of the energy_counte
 
 You can write initial values for the energy counters like this: (for example to make it match your grid energy meter)
 - start the script
-- type into the debug console below the script: "SetKVS("EnergyConsumed", 100.1*3600000 );" to set the consumed energy to 100.1 KWh.
+- type into the debug console below the script: "SetKVS("EnergyConsumedKWh", 100.1 );" to set the consumed energy to 100.1 KWh.
+- immediately after changing, stop and start the script again. Confirm that the values have been accepted.
 
