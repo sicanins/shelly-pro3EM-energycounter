@@ -1,6 +1,9 @@
 let energyReturnedWs = 0.0;
 let energyConsumedWs = 0.0;
 
+let energyReturnedKWh = 0.0;
+let energyConsumedKWh = 0.0;
+
 let log = 0;
 
 // set this to false to stop publishing on MQTT
@@ -28,31 +31,31 @@ function SetKVS(key, value)
  
 function SaveCounters()
 {
-  SetKVS("EnergyConsumed", energyConsumedWs );
-  SetKVS("EnergyReturned", energyReturnedWs );
+  SetKVS("EnergyConsumedKWh", energyConsumedKWh );
+  SetKVS("EnergyReturnedKWh", energyReturnedKWh );
 }
 Shelly.call(
    "KVS.Get", {
-     "key": "EnergyReturned",
+     "key": "EnergyReturnedKWh",
    },
   function callback(result, error_code, error_message, userdata) {
      if (error_code === 0) 
      {
-       energyReturnedWs = Number(result.value);
-       print("Loaded returned energy: ", energyReturnedWs / 3600000, " KWh");
+       energyReturnedKWh = Number(result.value);
+       print("Loaded returned energy: ", energyReturnedKWh, " KWh");
      }       
    }
  );
  
  Shelly.call(
    "KVS.Get", {
-     "key": "EnergyConsumed",
+     "key": "EnergyConsumedKWh",
    },
   function callback(result, error_code, error_message, userdata) {
      if (error_code === 0) 
      {
-       energyConsumedWs = Number(result.value);
-       print("Loaded consumed energy: ", energyConsumedWs / 3600000, " KWh");
+       energyConsumedKWh = Number(result.value);
+       print("Loaded consumed energy: ", energyConsumedKWh, " KWh");
      }       
    }
  );
@@ -78,13 +81,32 @@ function timerHandler(user_data)
         energyReturnedWs = energyReturnedWs - power * 0.5;
     }
     
+    // once a full Wh is accumulated, move it to the KWh counter
+    let fullWh = Math.floor((energyConsumedWs / 3600));
+    if (fullWh > 0)
+    {
+      energyConsumedKWh += fullWh / 1000;
+      energyConsumedWs -= fullWh * 3600;
+      if (log > 0)
+        print("Changed consumed KWh: ",energyConsumedKWh);
+    }
+    
+    fullWh = Math.floor((energyReturnedWs / 3600));
+    if (fullWh > 0)
+    {
+      energyReturnedKWh += fullWh / 1000;
+      energyReturnedWs -= fullWh * 3600;
+      if (log > 0)
+        print("Changed returned KWh: ",energyReturnedKWh);
+    }
+    
     if (log > 0)
       print(power , "W");
       
     counter3600 = counter3600 + 1;
     if (counter3600 > 3600)      
     {
-      counter3600 = 0;
+      counter3600 = 0;     
       SaveCounters();
     }
     
@@ -94,7 +116,7 @@ function timerHandler(user_data)
       counter20 = 0;  
       Shelly.call(
         "Sys.SetConfig", {
-           config: {device:{name:(energyConsumedWs / 3600000).toFixed(3)+" KWh ; "+(energyReturnedWs / 3600000).toFixed(3)+" KWh"}},
+           config: {device:{name:energyConsumedKWh.toFixed(3)+" KWh ; "+energyReturnedKWh.toFixed(3)+" KWh"}},
         },
         function(result, error_code, error_message, userdata) {
            //print("error ", error_code, " : ", error_message);
@@ -104,7 +126,7 @@ function timerHandler(user_data)
              
       if (typeof SHELLY_ID !== "undefined" && MQTTpublish === true) 
       {         
-        let value = (energyConsumedWs / 3600000).toFixed(3);
+        let value = energyConsumedKWh.toFixed(3);
         if (value !== lastPublishedMQTTConsumed)
         {
           MQTT.publish(
@@ -116,7 +138,7 @@ function timerHandler(user_data)
           lastPublishedMQTTConsumed = value;
         }
         
-        let value = (energyReturnedWs / 3600000).toFixed(3);
+        let value = energyReturnedKWh.toFixed(3);
         if (value !== lastPublishedMQTTReturned)
         {
           MQTT.publish(
