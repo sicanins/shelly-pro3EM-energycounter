@@ -155,3 +155,11 @@ function timerHandler(user_data)
 }
 
 Timer.set(500, true, timerHandler, null);
+
+function httpServerHandler(request, response) {
+    response.code = 200;
+    response.body = energyConsumedKWh.toFixed(3)+" KWh ; "+energyReturnedKWh.toFixed(3)+" KWh";
+    response.send();
+    return;
+}
+HTTPServer.registerEndpoint("energy_counter", httpServerHandler);
