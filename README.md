@@ -9,6 +9,10 @@ KVS flash storage is used add persistance to the measured energy values; they ar
 Additionally, the values are published on MQTT under <device name>/energy_counter
 This can be disabled by setting "MQTTpublish" to false in the header of the script.
 
+There is one more way to read the counters:
+http://<SHELLY_IP>/script/<script_id>/energy_counter
+returns the same string as in "name".
+
 # Setup
 
 Simply add a new script in the Pro3EM and copy the contents of the energy_counter.js file into it. Then press "Save" and "Start".
