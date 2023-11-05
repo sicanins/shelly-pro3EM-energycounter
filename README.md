@@ -1,3 +1,5 @@
+WARNING: this script does not work with firmware 1.0.7 currenty! See Issue #2.
+
 # shelly-pro3EM-energycounter
 
 This is a shelly script that runs on the Shelly Pro 3EM with firmware >= 1.0.0.
