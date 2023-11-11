@@ -9,6 +9,10 @@ let log = 0;
 // set this to false to stop publishing on MQTT
 let MQTTpublish = true;
 
+// set this to false if you DONT want to update the name
+// (the updated name is necessary to read the data with the iobroker shelly plugin)
+let updateName = true;
+
 // query the MQTT prefix on startup
 let SHELLY_ID = undefined;
 Shelly.call("Mqtt.GetConfig", "", function (res, err_code, err_msg, ud) {
@@ -34,6 +38,7 @@ function SaveCounters()
   SetKVS("EnergyConsumedKWh", energyConsumedKWh );
   SetKVS("EnergyReturnedKWh", energyReturnedKWh );
 }
+     
 Shelly.call(
    "KVS.Get", {
      "key": "EnergyReturnedKWh",
@@ -114,15 +119,18 @@ function timerHandler(user_data)
     if ( counter20 > 20)
     {
       counter20 = 0;  
-      Shelly.call(
-        "Sys.SetConfig", {
-           config: {device:{name:energyConsumedKWh.toFixed(3)+" KWh ; "+energyReturnedKWh.toFixed(3)+" KWh"}},
-        },
-        function(result, error_code, error_message, userdata) {
-           //print("error ", error_code, " : ", error_message);
-           //print("result", JSON.stringify(result));
-        }
-      );
+      if (updateName)
+      {
+        Shelly.call(
+          "Sys.SetConfig", {
+             config: {device:{name:energyConsumedKWh.toFixed(3)+" KWh ; "+(energyReturnedKWh+energyConsumedWs / 3600000).toFixed(5)+" KWh"}},
+          },
+          function(result, error_code, error_message, userdata) {
+             //print("error ", error_code, " : ", error_message);
+             //print("result", JSON.stringify(result));
+          }
+        );
+      }
              
       if (typeof SHELLY_ID !== "undefined" && MQTTpublish === true) 
       {         
@@ -158,7 +166,15 @@ Timer.set(500, true, timerHandler, null);
 
 function httpServerHandler(request, response) {
     response.code = 200;
-    response.body = energyConsumedKWh.toFixed(3)+" KWh ; "+energyReturnedKWh.toFixed(3)+" KWh";
+
+    // create JSON object 
+    const energyData = {
+        energyConsumed: energyConsumedKWh.toFixed(3) + " KWh",
+        energyReturned: energyReturnedKWh.toFixed(3) + " KWh"
+    };
+
+    // convert JSON object to string and send it as reply
+    response.body = JSON.stringify(energyData);
     response.send();
     return;
 }
