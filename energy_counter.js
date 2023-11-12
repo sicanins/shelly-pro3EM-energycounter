@@ -11,7 +11,7 @@ let MQTTpublish = true;
 
 // set this to false if you DONT want to update the name
 // (the updated name is necessary to read the data with the iobroker shelly plugin)
-let updateName = true;
+let updateName = false;
 
 // query the MQTT prefix on startup
 let SHELLY_ID = undefined;
@@ -123,7 +123,7 @@ function timerHandler(user_data)
       {
         Shelly.call(
           "Sys.SetConfig", {
-             config: {device:{name:energyConsumedKWh.toFixed(3)+" KWh ; "+(energyReturnedKWh+energyConsumedWs / 3600000).toFixed(5)+" KWh"}},
+             config: {device:{name:energyConsumedKWh.toFixed(3)+" KWh ; "+(energyReturnedKWh+energyReturnedWs / 3600000).toFixed(5)+" KWh"}},
           },
           function(result, error_code, error_message, userdata) {
              //print("error ", error_code, " : ", error_message);
@@ -170,7 +170,7 @@ function httpServerHandler(request, response) {
     // create JSON object 
     const energyData = {
         energyConsumed: energyConsumedKWh.toFixed(3) + " KWh",
-        energyReturned: energyReturnedKWh.toFixed(3) + " KWh"
+        energyReturned: (energyReturnedKWh+(energyReturnedWs / 3600000)).toFixed(5) + " KWh"
     };
 
     // convert JSON object to string and send it as reply
